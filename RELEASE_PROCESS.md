@@ -1,43 +1,62 @@
-# 📦 Release Process
+# 📆 RELEASE_PROCESS
 
-This document describes the complete release flow for the `zsh-smart-insert` project, for both **beta** (prerelease) and **stable** versions, using [Changesets](https://github.com/changesets/changesets).
+This document outlines the official release process for the `zsh-smart-insert` plugin using [Changesets](https://github.com/changesets/changesets) and GitHub Actions workflows.
+
+It covers both **beta (prerelease)** and **stable** release flows.
 
 ---
 
-## 🧪 Beta Release
+## ✍️ Prerequisites (For Beta and Stable)
 
-Use this process to generate versions like `1.0.1-beta.0`, `1.0.1-beta.1`, etc.
+Before triggering any release pipeline, always perform the following steps **locally**:
 
-### 🔁 1. Create a Changeset
+### 1. Create a changeset
 
 ```bash
 npx changeset
 ```
 
 - Select the package: `zsh-smart-insert`
-- Type: usually `patch` for betas
-- Changelog message: **in English**
+- Choose the type (`patch`, `minor`, or `major`)
+- Enter a changelog message in English
 
-### 🚀 2. Run the Release Beta pipeline
+### 2. Commit and push the changeset
+
+```bash
+git add .changeset
+git commit -m "✨ feat(release): prepare release notes"
+git push
+```
+
+> ✅ This step ensures that the GitHub Actions pipeline has all the metadata needed for the release (version bump, changelog, etc.)
+
+---
+
+## 🚪 Beta Release
+
+Use this process to generate versions like `1.0.1-beta.0`, `1.0.1-beta.1`, etc.
+
+### Run the Release Beta pipeline
 
 Go to **GitHub > Actions > Release Beta** and run it with:
 
-- Branch: `main`
-- Prerelease suffix: `beta` (or `alpha`, `rc`, etc.)
+- **Branch:** `main`
+- **Prerelease suffix:** `beta` (or `alpha`, `rc`, etc.)
 
-### 🧠 Release Beta pipeline - What it does
+### What the Beta pipeline does
 
-- Runs `yarn changeset pre enter beta`
-- Runs `yarn changeset version`
-- Generates version like `1.0.1-beta.0`
-- Creates changelog
-- Commits and tags `v1.0.1-beta.0`
-- Publishes a GitHub Release
+- Enters prerelease mode with the given suffix (`beta`, etc.)
+- Applies version via `yarn changeset version`
+- Creates version like `1.0.1-beta.0`
+- Commits version bump + changelog
+- Tags the commit (e.g., `v1.0.1-beta.0`)
+- **Then** generates release notes (after tag)
+- Pushes everything and publishes GitHub Release
 
-### 🧹 Release Beta pipeline - Notes
+### Notes on Beta Releases
 
-- If the tag `vX.Y.Z-beta.N` already exists, the pipeline will fail.
-- You can delete duplicate tags manually:
+If a tag like `vX.Y.Z-beta.N` already exists, the pipeline will fail.
+You can delete problematic tags manually:
 
 ```bash
 git push origin :refs/tags/v1.0.1-beta.0
@@ -49,44 +68,29 @@ git fetch --prune --tags
 
 ## 🚀 Stable Release
 
-Use this process to promote a prerelease to a final version like `1.0.1`.
+Use this process to generate a final release version like `1.0.1`, `2.0.0`, etc.
 
-### 🐚 1. Exit the prerelease cycle
-
-```bash
-yarn changeset pre exit
-git add .changeset/pre.json
-git commit -m "chore(changeset): 🐚 exit beta prerelease cycle"
-git push origin main
-```
-
-### 📟 2. Create a new Changeset
-
-```bash
-npx changeset
-```
-
-- Type: usually `patch` to promote the beta
-- Changelog message: describe the main change
-
-### 💠 3. Run the Release Stable pipeline
+### Run the Release Stable pipeline
 
 Go to **GitHub > Actions > Release Stable** and run it with:
 
-- Version: `1.0.1`
-- Branch: `main`
+- **Version:** `1.0.1`
+- **Branch:** `main`
 
-### 🧠 Release Stable pipeline - What it does
+### What the Stable pipeline does
 
+- Automatically exits prerelease mode if applicable
+- Applies the given version to `package.json`
 - Runs `yarn changeset version`
-- Generates a new stable version (no suffix)
-- Commits `package.json`, changelog, and tag
-- Creates a GitHub Release
+- Commits bump + changelog
+- Tags the commit (e.g., `v1.0.1`)
+- **Then** generates release notes (after tag)
+- Pushes everything and publishes GitHub Release
 
-### 🧹 Release Stable pipeline - Notes
+### Notes on Stable Releases
 
-- If the tag `vX.Y.Z` already exists, the pipeline will fail.
-- You can delete it manually:
+If the tag `vX.Y.Z` already exists, the pipeline will fail.
+You can remove it manually:
 
 ```bash
 git push origin :refs/tags/v1.0.1
@@ -96,31 +100,34 @@ git fetch --prune --tags
 
 ---
 
-## 🧠 Mind Map (MermaidJS)
+## 🧰 Release Flow Diagram (MermaidJS)
 
 ```mermaid
 mindmap
   root((Release Flow))
-    Beta Release
+    Shared Step
       Create changeset (npx changeset)
+      Commit and push .changeset
+    Beta Release
       GitHub Actions > Release Beta
         Inputs: branch=main, suffix=beta
-        Runs: pre enter → version → tag
-      Release: vX.Y.Z-beta.N
-      Notes
-        Duplicate tag
-        Resolve manually
+        Steps:
+          - prerelease mode (enter)
+          - apply version
+          - tag commit
+          - generate notes
+          - publish release
     Stable Release
-      Exit cycle (pre exit)
-      Create new changeset
       GitHub Actions > Release Stable
         Inputs: version=1.0.1, branch=main
-        Runs: version → tag
-      Release: vX.Y.Z
-      Notes
-        Duplicate tag
+        Steps:
+          - exit prerelease (if needed)
+          - apply version
+          - tag commit
+          - generate notes
+          - publish release
 ```
 
 ---
 
-With this process, your project follows a versioned, traceable, and production-safe release cycle. 💡
+By following this process, your releases will be traceable, automated, and aligned with semantic versioning. 🚀

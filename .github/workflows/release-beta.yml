@@ -1,4 +1,4 @@
-name: 📦 Release (Beta)
+name: 📈 Release (Beta)
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ permissions:
 jobs:
   beta-release:
     if: github.actor == 'lgdevlop'
-    name: Generate and publish prerelease
+    name: Generate Beta Release
     runs-on: ubuntu-latest
 
     steps:
@@ -36,49 +36,37 @@ jobs:
       - name: 🔄 Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: 📝 Configure Git identity
+      - name: 📍 Configure Git identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 🔍 Check for changesets
-        run: |
-          if [ -z "$(ls .changeset/*.md 2>/dev/null | grep -v README.md)" ]; then
-            echo "❌ No changesets found. Exiting."
-            exit 0
-          fi
+      - name: 📊 Enter prerelease mode
+        run: yarn changeset pre enter ${{ github.event.inputs.prerelease_suffix }}
 
-      - name: 📅 Enter prerelease mode
-        run: |
-          if [ -f .changeset/pre.json ]; then
-            echo "🔁 Already in prerelease mode. Skipping enter."
-          else
-            yarn changeset pre enter ${{ github.event.inputs.prerelease_suffix }}
-          fi
-
-      - name: 📉 Apply prerelease version
+      - name: 📆 Apply prerelease version
         run: yarn changeset version
 
-      - name: 📓 Generate custom release notes
-        run: node scripts/generate-release-notes.js
-
-      - name: 🔖 Create prerelease tag if missing
+      - name: 🔖 Commit version and tag
         run: |
           VERSION=$(jq -r .version package.json)
           TAG="v$VERSION"
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "[INFO] Creating prerelease tag $TAG manually..."
             git add .
-            git commit -m "chore(release): $VERSION"
+            git commit -m "✨ feat(release): prepare prerelease $VERSION"
             git tag "$TAG"
           else
             echo "[INFO] Tag $TAG already exists."
           fi
 
-      - name: 🚀 Push version and tags
+      - name: 🚀 Push changes and tags
         run: |
           git push origin HEAD:${{ github.event.inputs.branch }}
           git push origin --tags
+
+      - name: 📃 Generate release notes
+        run: node scripts/generate-release-notes.js
 
       - name: 📄 Create GitHub Release
         env:

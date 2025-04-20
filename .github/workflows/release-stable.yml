@@ -35,38 +35,34 @@ jobs:
       - name: 🔄 Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: 📝 Configure Git identity
+      - name: 📍 Configure Git identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 📅 Exit prerelease mode
+      - name: 📝 Exit prerelease mode if applicable
         run: |
           if [ -f .changeset/pre.json ]; then
             yarn changeset pre exit
             git add .changeset/pre.json
-            git commit -m "chore(changeset): 🔺 exit prerelease mode"
+            git commit -m "📉 chore(release): exit prerelease mode"
           else
             echo "❌ Not in prerelease mode. Skipping exit."
           fi
 
-      - name: 📉 Apply stable version
+      - name: 📆 Apply stable version
         run: |
           yarn changeset version
           jq --arg VERSION "${{ github.event.inputs.version }}" '.version = $VERSION' package.json > package.json.tmp
           mv package.json.tmp package.json
 
-      - name: 📓 Generate custom release notes
-        run: node scripts/generate-release-notes.js
-
-      - name: 🔖 Create stable tag if missing
+      - name: 🔖 Commit version and tag
         run: |
           VERSION=${{ github.event.inputs.version }}
           TAG="v$VERSION"
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "[INFO] Creating tag $TAG manually..."
             git add .
-            git commit -m "chore(release): $VERSION"
+            git commit -m "✨ feat(release): prepare stable release $VERSION"
             git tag "$TAG"
           else
             echo "[INFO] Tag $TAG already exists."
@@ -76,6 +72,9 @@ jobs:
         run: |
           git push origin HEAD:${{ github.event.inputs.branch }}
           git push origin --tags
+
+      - name: 📃 Generate release notes
+        run: node scripts/generate-release-notes.js
 
       - name: 📄 Create GitHub Release
         env:
