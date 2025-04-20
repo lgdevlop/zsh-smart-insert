@@ -1,0 +1,15 @@
+# Validates pattern: <emoji> type(scope): message
+pattern='^[^[:alnum:][:space:]]+\s(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?:\s.+'
+
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+if echo "$commit_msg" | grep -Eq "$pattern"; then
+  echo -e "\033[1;32m✅ Commit message format is valid.\033[0m"
+else
+  echo -e "\033[1;31m❌ Invalid commit message format.\033[0m"
+  echo
+  echo "Expected format: <emoji> type(scope): message"
+  echo "Example: ✨ feat(core): support plugin previews"
+  exit 1
+fi

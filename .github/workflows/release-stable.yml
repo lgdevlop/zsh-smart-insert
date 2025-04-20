@@ -1,0 +1,87 @@
+name: 🌟 Release (Stable)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Stable version to release (e.g., 1.2.0)"
+        required: true
+      branch:
+        description: "Branch to release from"
+        required: true
+        default: "main"
+
+permissions:
+  contents: write
+
+jobs:
+  stable-release:
+    if: github.actor == 'lgdevlop'
+    name: Generate and publish stable release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: ✨ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🔄 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 📝 Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 📅 Exit prerelease mode
+        run: |
+          if [ -f .changeset/pre.json ]; then
+            yarn changeset pre exit
+            git add .changeset/pre.json
+            git commit -m "chore(changeset): 🔺 exit prerelease mode"
+          else
+            echo "❌ Not in prerelease mode. Skipping exit."
+          fi
+
+      - name: 📉 Apply stable version
+        run: |
+          yarn changeset version
+          jq --arg VERSION "${{ github.event.inputs.version }}" '.version = $VERSION' package.json > package.json.tmp
+          mv package.json.tmp package.json
+
+      - name: 📓 Generate custom release notes
+        run: node scripts/generate-release-notes.js
+
+      - name: 🔖 Create stable tag if missing
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          TAG="v$VERSION"
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "[INFO] Creating tag $TAG manually..."
+            git add .
+            git commit -m "chore(release): $VERSION"
+            git tag "$TAG"
+          else
+            echo "[INFO] Tag $TAG already exists."
+          fi
+
+      - name: 🚀 Push changes and tags
+        run: |
+          git push origin HEAD:${{ github.event.inputs.branch }}
+          git push origin --tags
+
+      - name: 📄 Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes-file ".github/release-notes/$VERSION.md"
