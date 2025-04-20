@@ -1,6 +1,6 @@
 {
   "name": "zsh-smart-insert",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Zsh plugin to smartly insert file paths using FZF, fd, rg and custom prefixes.",
   "repository": {
     "type": "git",
