@@ -54,7 +54,7 @@ jobs:
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "[INFO] Creating prerelease tag $TAG manually..."
             git add .
-            git commit -m "✨ feat(release): prepare prerelease $VERSION"
+            git commit -m "🚀 chore(release): release $VERSION — version bump, changelog, and tag"
             git tag "$TAG"
           else
             echo "[INFO] Tag $TAG already exists."

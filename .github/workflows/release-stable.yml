@@ -62,7 +62,7 @@ jobs:
           TAG="v$VERSION"
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             git add .
-            git commit -m "✨ feat(release): prepare stable release $VERSION"
+            git commit -m "🚀 chore(release): release $VERSION — version bump, changelog, and tag"
             git tag "$TAG"
           else
             echo "[INFO] Tag $TAG already exists."
